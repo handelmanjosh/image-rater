@@ -8,23 +8,23 @@ let img: HTMLImageElement;
 type Colors = "red" | "green";
 let currentArray: number[][] = [];
 let selecting: boolean = false;
-const arrays: number[][][] = [];
-const playersGlobal: { position: string, team: string; responsibility: string; }[] = [];
+let arrays: number[][][] = [];
+let playersGlobal: { position: string, team: string; responsibility: string; }[] = [];
 let selectedPlayerGlobal: number = -1;
 const defense: string[] = ["NT", "DT", "DE", "ILB", "OLB", "CB", "S"];
 const offense: string[] = ["C", "OG", "OT", "TE", "QB", "RB", "FB", "WR"];
 const responsibility: string[] = ["Shoot Group", "Control Group", "Man Coverage", "Zone Coverage", "Blitz"];
+let imageIndex: number = 0;
 export default function Home() {
   const [players, setPlayers] = useState<{ position: string, team: string; responsibility: string; }[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<number>(-1);
-
   useEffect(() => {
     canvas = document.getElementById("canvas") as HTMLCanvasElement;
     context = canvas.getContext("2d") as CanvasRenderingContext2D;
     canvas.width = 811;
     canvas.height = 455;
     img = document.createElement("img");
-    img.src = "/test.jpg";
+    img.src = `/data/${imageIndex}.png`;
     document.addEventListener("mousedown", handleMouseDown);
     document.addEventListener("touchstart", handleTouchStart);
     frame();
@@ -85,8 +85,6 @@ export default function Home() {
           }
         }
         currentArray = [];
-        console.log(arrays);
-        console.log(playersGlobal);
       }
       selecting = false;
       document.removeEventListener("mousemove", mouse);
@@ -148,8 +146,12 @@ export default function Home() {
       data += temp;
     }
     const blob = new Blob([data], { type: "text/plain;charset=utf-8" });
-    console.log(blob.size);
     saveAs(blob, 'result.txt');
+    imageIndex++;
+    img.src = `/data/${imageIndex}.png`;
+    arrays = [];
+    playersGlobal = [];
+    setPlayers(playersGlobal);
   };
   const includes = (array: number[][], item: number[]) => {
     for (const thing of array) {
