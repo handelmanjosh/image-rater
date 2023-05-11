@@ -9,12 +9,13 @@ type Colors = "red" | "green";
 let currentArray: number[][] = [];
 let selecting: boolean = false;
 const arrays: number[][][] = [];
-const playersGlobal: { position: string, team: string; }[] = [];
+const playersGlobal: { position: string, team: string; responsibility: string; }[] = [];
 let selectedPlayerGlobal: number = -1;
 const defense: string[] = ["NT", "DT", "DE", "ILB", "OLB", "CB", "S"];
 const offense: string[] = ["C", "OG", "OT", "TE", "QB", "RB", "FB", "WR"];
+const responsibility: string[] = ["Shoot Group", "Control Group", "Man Coverage", "Zone Coverage", "Blitz"];
 export default function Home() {
-  const [players, setPlayers] = useState<{ position: string, team: string; }[]>([]);
+  const [players, setPlayers] = useState<{ position: string, team: string; responsibility: string; }[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<number>(-1);
 
   useEffect(() => {
@@ -25,20 +26,20 @@ export default function Home() {
     img = document.createElement("img");
     img.src = "/test.jpg";
     document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("touchstart", handleTouchStart);
     frame();
   }, []);
   const adjustToCanvas = (x: number, y: number): number[] => {
     const canvasRect = canvas.getBoundingClientRect();
     return [x - canvasRect.left - window.scrollX, y - canvasRect.top - window.scrollY];
   };
-  const handleMouseDown = () => {
-    selecting = true;
-    document.addEventListener("mousemove", onSelect);
+  const handleTouchStart = () => {
+    document.addEventListener("touchmove", touch);
     const remove = () => {
       if (currentArray.length != 0) {
         if (selectedPlayerGlobal == -1) {
           arrays.push(currentArray);
-          playersGlobal.push({ position: "UNDEFINED", team: "UNDEFINED" });
+          playersGlobal.push({ position: "UNDEFINED", team: "UNDEFINED", responsibility: "UNDEFINED" });
           const newPlayers = [...playersGlobal];
           setPlayers(newPlayers);
         } else {
@@ -53,13 +54,47 @@ export default function Home() {
         console.log(playersGlobal);
       }
       selecting = false;
-      document.removeEventListener("mousemove", onSelect);
+      document.removeEventListener("touchmove", touch);
+      document.removeEventListener("touchend", remove);
+    };
+    document.addEventListener("touchend", remove);
+  };
+  const touch = (event: TouchEvent) => {
+    const [x, y] = adjustToCanvas(event.touches[0].clientX, event.touches[0].clientY);
+    onSelect(x, y);
+  };
+  const mouse = (event: MouseEvent) => {
+    const [x, y] = adjustToCanvas(event.clientX, event.clientY);
+    onSelect(x, y);
+  };
+  const handleMouseDown = () => {
+    selecting = true;
+    document.addEventListener("mousemove", mouse);
+    const remove = () => {
+      if (currentArray.length != 0) {
+        if (selectedPlayerGlobal == -1) {
+          arrays.push(currentArray);
+          playersGlobal.push({ position: "UNDEFINED", team: "UNDEFINED", responsibility: "UNDEFINED" });
+          const newPlayers = [...playersGlobal];
+          setPlayers(newPlayers);
+        } else {
+          for (let item of currentArray) {
+            if (!includes(arrays[selectedPlayerGlobal], item)) {
+              arrays[selectedPlayerGlobal].push(item);
+            }
+          }
+        }
+        currentArray = [];
+        console.log(arrays);
+        console.log(playersGlobal);
+      }
+      selecting = false;
+      document.removeEventListener("mousemove", mouse);
       document.removeEventListener("mouseup", remove);
     };
     document.addEventListener("mouseup", remove);
   };
-  const onSelect = (event: MouseEvent) => {
-    const [x, y] = adjustToCanvas(event.clientX, event.clientY);
+  const onSelect = (x: number, y: number) => {
     if (x < 0 || y < 0 || y > canvas.height || x > canvas.width) {
       return;
     }
@@ -131,7 +166,7 @@ export default function Home() {
           <canvas id="canvas" className="border-2 border-black" />
           <button onClick={downloadData} className="p-4 rounded-lg bg-blue-600">Download Data</button>
         </div>
-        <div className="flex flex-col justify-center gap-2 items-center">
+        <div className="grid grid-cols-5 grid-rows-4 gap-2">
           {players.map((player, index) => {
             if (index == selectedPlayer) {
               return (
@@ -193,7 +228,23 @@ export default function Home() {
               </button>
             ))}
           </div>
-        </div> : <></>}
+          <div className="flex flex-row justify-center items-center gap-2">
+            {responsibility.map((r, i) => (
+              <button
+                key={i}
+                className="bg-orange-600 p-4 hover:brightness-90 active:brightness-75 rounded-lg border-2 border-black"
+                onClick={() => {
+                  const newPlayers = [...players];
+                  newPlayers[selectedPlayer].responsibility = r;
+                  setPlayers(newPlayers);
+                }}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div> : <></>
+      }
     </div>
   );
 }
