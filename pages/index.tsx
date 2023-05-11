@@ -34,6 +34,7 @@ export default function Home() {
     return [x - canvasRect.left - window.scrollX, y - canvasRect.top - window.scrollY];
   };
   const handleTouchStart = () => {
+    selecting = true;
     document.addEventListener("touchmove", touch);
     const remove = () => {
       if (currentArray.length != 0) {
@@ -96,6 +97,7 @@ export default function Home() {
     if (x < 0 || y < 0 || y > canvas.height || x > canvas.width) {
       return;
     }
+    console.log({ x, y });
     for (let i = 0; i < 8; i++) {
       for (let ii = 0; ii < 8; ii++) {
         const next = [Math.floor(x + i), Math.floor(y + ii)];
