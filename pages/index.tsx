@@ -1,11 +1,20 @@
 import Player, { PlayerProps } from "@/components/Player";
 import { useEffect, useState } from "react";
 import { saveAs } from 'file-saver';
+import AWS, { S3 } from 'aws-sdk';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+
+
+
+AWS.config.update({
+  accessKeyId: 'AKIAX3HTXUF4MRQPTLFT',
+  secretAccessKey: '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',
+  region: 'us-east-1',
+});
 
 let canvas: HTMLCanvasElement;
 let context: CanvasRenderingContext2D;
 let img: HTMLImageElement;
-type Colors = "red" | "green";
 let currentArray: number[][] = [];
 let selecting: boolean = false;
 let arrays: number[][][] = [];
@@ -14,20 +23,28 @@ let selectedPlayerGlobal: number = -1;
 const defense: string[] = ["NT", "DT", "DE", "ILB", "OLB", "CB", "S"];
 const offense: string[] = ["C", "OG", "OT", "TE", "QB", "RB", "FB", "WR"];
 const responsibility: string[] = ["Shoot Group", "Control Group", "Man Coverage", "Zone Coverage", "Blitz"];
-let imageIndex: number = 0;
+let imageIndex: number;
+let ran = 0;
 export default function Home() {
   const [players, setPlayers] = useState<{ position: string, team: string; responsibility: string; }[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<number>(-1);
   useEffect(() => {
+    if (ran == 1) return;
     canvas = document.getElementById("canvas") as HTMLCanvasElement;
     context = canvas.getContext("2d") as CanvasRenderingContext2D;
-    canvas.width = 811;
-    canvas.height = 455;
-    img = document.createElement("img");
-    img.src = `/data/${imageIndex}.png`;
+    const ratio = 2880 / 1800;
+    canvas.width = 800;
+    canvas.height = canvas.width / ratio;
+    getStartingImage().then(number => {
+      imageIndex = number;
+      img = document.createElement("img");
+      img.src = `/data/${imageIndex}.png`;
+      console.log(imageIndex);
+    });
     document.addEventListener("mousedown", handleMouseDown);
     document.addEventListener("touchstart", handleTouchStart);
     frame();
+    ran++;
   }, []);
   const adjustToCanvas = (x: number, y: number): number[] => {
     const canvasRect = canvas.getBoundingClientRect();
@@ -51,8 +68,6 @@ export default function Home() {
           }
         }
         currentArray = [];
-        console.log(arrays);
-        console.log(playersGlobal);
       }
       selecting = false;
       document.removeEventListener("touchmove", touch);
@@ -97,7 +112,6 @@ export default function Home() {
     if (x < 0 || y < 0 || y > canvas.height || x > canvas.width) {
       return;
     }
-    console.log({ x, y });
     for (let i = 0; i < 8; i++) {
       for (let ii = 0; ii < 8; ii++) {
         const next = [Math.floor(x + i), Math.floor(y + ii)];
@@ -138,18 +152,27 @@ export default function Home() {
     selectedPlayerGlobal = -1;
   };
   const resetCanvas = () => {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(img, 0, 0, canvas.width, canvas.height);
+    if (img) {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(img, 0, 0, canvas.width, canvas.height);
+    }
   };
-  const downloadData = () => {
+  const downloadData = async () => {
+    console.log(process.env.AWS_ACCESS_KEY_ID, process.env.AWS_SECRET_ACCESS_KEY);
+    const s3 = new S3();
     let data = ``;
     for (let i = 0; i < arrays.length; i++) {
       const temp = `Player Location: ${arrays[i]}\n Player Position: ${playersGlobal[i].position}\n Player Team: ${playersGlobal[i].team}\n`;
       data += temp;
     }
-    const blob = new Blob([data], { type: "text/plain;charset=utf-8" });
-    saveAs(blob, 'result.txt');
+    const params = {
+      Bucket: "broncos-data-processing",
+      Key: `results/${imageIndex}.txt`,
+      Body: data,
+    };
+    await s3.upload(params).promise();
     imageIndex++;
+    await updateStartingImage(imageIndex);
     img.src = `/data/${imageIndex}.png`;
     arrays = [];
     playersGlobal = [];
@@ -162,6 +185,26 @@ export default function Home() {
       }
     }
     return false;
+  };
+  const getStartingImage = async () => {
+    const s3 = new S3();
+    const params = {
+      Bucket: "broncos-data-processing",
+      Key: "currentProcessingImageNum.txt",
+    };
+    const response = await s3.getObject(params).promise();
+    const number = Number(response.Body?.toString('utf-8'));
+    console.log('Starting image index:', number);
+    return number;
+  };
+  const updateStartingImage = async (num: number) => {
+    const s3 = new S3();
+    const params = {
+      Bucket: "broncos-data-processing",
+      Key: "currentProcessingImageNum.txt",
+      Body: `${num}`
+    };
+    await s3.upload(params).promise();
   };
   return (
     <div className="flex flex-col justify-center items-center w-full">
