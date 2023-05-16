@@ -1,8 +1,8 @@
 
 
 import { useEffect, useState } from "react";
-import ImageModel, { ImageModelProps } from "../components/imageModel";
-import { getAllBasicData } from "../components/utils";
+import ImageModel, { ImageModelProps } from "../../components/imageModel";
+import { getAllBasicData } from "../../components/utils";
 
 let imageGroupIndex: number = 0;
 const ImagesHome = () => {

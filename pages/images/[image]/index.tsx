@@ -2,7 +2,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Player, { PlayerProps } from "@/components/Player";
 import AWS, { S3 } from 'aws-sdk';
-import { getDetailedData } from "@/pages/components/utils";
+import { getDetailedData } from "@/components/utils";
 
 AWS.config.update({
     accessKeyId: 'AKIAX3HTXUF4MRQPTLFT',
