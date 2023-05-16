@@ -55,19 +55,24 @@ const getBasicData = async (num: number) => {
 };
 export const getAllBasicData = async (low: number, high: number): Promise<ImageModelProps[]> => {
     let allBasicData: ImageModelProps[] = [];
+    let getsBasicData: boolean = true;
     for (let i = low; i < high; i++) {
         const status = await checkImage(i); //checks if there is an image corresponding to index
         if (status) {
-            const basicData = await getBasicData(i);
-            if (basicData) {
-                allBasicData.push({ percentage: basicData.players == 0 ? 0 : basicData.players / basicData.finishedPlayers * 100, src: `${image_url}${i}.png`, redirect: `/images/${i}`, number: basicData.players });
+            if (getsBasicData) {
+                const basicData = await getBasicData(i);
+                if (basicData) {
+                    allBasicData.push({ percentage: basicData.players == 0 ? 0 : basicData.players / basicData.finishedPlayers * 100, src: `${image_url}${i}.png`, redirect: `/images/${i}`, number: basicData.players });
+                } else {
+                    getsBasicData = false;
+                    allBasicData.push({ percentage: 0, src: `${image_url}${i}.png`, redirect: `/images/${i}`, number: 0 });
+                }
             } else {
                 allBasicData.push({ percentage: 0, src: `${image_url}${i}.png`, redirect: `/images/${i}`, number: 0 });
             }
         } else {
             break;
         }
-
     }
     return allBasicData;
 };
