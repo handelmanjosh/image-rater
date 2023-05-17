@@ -16,7 +16,8 @@ const ImagesHome = () => {
     useEffect(() => {
         if (ran == 1) return;
         const { low } = router.query;
-        imageGroupIndex = Number(low);
+        imageGroupIndex = Number.isNaN(Number(low)) ? 0 : Number(low);
+
         getAndSetData().then(() => setIsLoading(false));
         ran++;
     }, []);
@@ -37,6 +38,8 @@ const ImagesHome = () => {
             number: number;
         }[] = [];
         const getAllBasicDataGenerator = getAllBasicData(imageGroupIndex, imageGroupIndex + 50);
+        console.log(imageGroupIndex);
+        console.log(getAllBasicDataGenerator);
         for (let i = 0; i < 50; i++) {
             const tempData = (await getAllBasicDataGenerator.next()).value;
             if (tempData) {

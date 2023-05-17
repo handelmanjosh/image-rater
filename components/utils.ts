@@ -84,7 +84,7 @@ export async function* getAllBasicData(low: number, high: number): AsyncGenerato
         if (status) {
             const basicData = await getBasicData(i);
             if (basicData) {
-                finalData = { percentage: basicData.players == 0 ? 0 : basicData.players / basicData.finishedPlayers * 100, src: `${image_url}${i}.png`, redirect: `/images/${i}`, number: basicData.players };
+                finalData = { percentage: basicData.players == 0 ? 0 : basicData.players / basicData.finishedPlayers * 100, src: `${image_url}${i}.png`, redirect: `/images/image/${i}`, number: basicData.players };
             } else {
                 finalData = { percentage: 0, src: `${image_url}${i}.png`, redirect: `/images/image/${i}`, number: 0 };
             }
