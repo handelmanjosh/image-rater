@@ -20,7 +20,7 @@ export default function Home() {
     router.push(`/images/image/${num}`, undefined, { shallow: false });
   };
   const goToRecentPage = () => {
-    router.push(`/images?low=${num}`, undefined, { shallow: false });
+    router.push(`/images/${num}`, undefined, { shallow: false });
   };
   if (isLoading) {
     return (
