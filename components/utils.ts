@@ -1,5 +1,6 @@
 import AWS, { S3 } from "aws-sdk";
 import { ImageModelProps } from "./imageModel";
+import { finished } from "stream";
 
 AWS.config.update({
     accessKeyId: 'AKIAX3HTXUF4MRQPTLFT',
@@ -89,29 +90,13 @@ export async function* getAllBasicData(low: number, high: number): AsyncGenerato
                 finalData = { percentage: 0, src: `${image_url}${i}.png`, redirect: `/images/image/${i}`, number: 0 };
             }
         }
-        count++;
+
         //@ts-ignore
-        yield { ...finalData, count };
+        yield { ...finalData, count, low };
+        count++;
     }
 }
-export const getAllBasicData2 = async (low: number, high: number): Promise<ImageModelProps[]> => {
-    let allBasicData: ImageModelProps[] = [];
-    for (let i = low; i < high; i++) {
-        const status = await checkImage(i); //checks if there is an image corresponding to index
-        if (status) {
-            const basicData = await getBasicData(i);
 
-            if (basicData) {
-                allBasicData.push({ percentage: basicData.players == 0 ? 0 : basicData.players / basicData.finishedPlayers * 100, src: `${image_url}${i}.png`, redirect: `/images/${i}`, number: basicData.players });
-            } else {
-                allBasicData.push({ percentage: 0, src: `${image_url}${i}.png`, redirect: `/images/${i}`, number: 0 });
-            }
-        } else {
-            break;
-        }
-    }
-    return allBasicData;
-};
 export const getDetailedData = async (num: number) => {
     const data = await getImageData(num);
     return data;
