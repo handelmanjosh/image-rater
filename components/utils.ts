@@ -10,6 +10,29 @@ AWS.config.update({
 const image_url = "https://broncos-data-processing.s3.amazonaws.com/images/";
 const data_url = "https://broncos-data-processing.s3.amazonaws.com/results/";
 
+export const getRecentImageNum = async (): Promise<number> => {
+    const s3 = new S3();
+    const params1 = {
+        Bucket: "broncos-data-processing",
+        Key: "recentImage.txt"
+    };
+    try {
+        const response = await s3.getObject(params1).promise();
+        const number = Number(response.Body?.toString('utf-8'));
+        return number;
+    } catch (e) {
+        return 0;
+    }
+};
+export const setNewRecentImage = async (num: number) => {
+    const s3 = new S3();
+    const params = {
+        Bucket: "broncos-data-processing",
+        Key: "recentImage.txt",
+        Body: `${num}`
+    };
+    await s3.upload(params).promise();
+};
 export const getStartingImage = async () => {
     const s3 = new S3();
     const params = {
@@ -53,20 +76,33 @@ const getBasicData = async (num: number) => {
         return null;
     }
 };
-export const getAllBasicData = async (low: number, high: number): Promise<ImageModelProps[]> => {
+export async function* getAllBasicData(low: number, high: number): AsyncGenerator<{ percentage: number, src: string, redirect: string, number: number, count?: number; }, void, undefined> {
+    let count = 0;
+    for (let i = low; i < high; i++) {
+        const status = await checkImage(i); //checks if there is an image corresponding to index
+        let finalData = null;
+        if (status) {
+            const basicData = await getBasicData(i);
+            if (basicData) {
+                finalData = { percentage: basicData.players == 0 ? 0 : basicData.players / basicData.finishedPlayers * 100, src: `${image_url}${i}.png`, redirect: `/images/${i}`, number: basicData.players };
+            } else {
+                finalData = { percentage: 0, src: `${image_url}${i}.png`, redirect: `/images/image/${i}`, number: 0 };
+            }
+        }
+        count++;
+        //@ts-ignore
+        yield { ...finalData, count };
+    }
+}
+export const getAllBasicData2 = async (low: number, high: number): Promise<ImageModelProps[]> => {
     let allBasicData: ImageModelProps[] = [];
-    let getsBasicData: boolean = true;
     for (let i = low; i < high; i++) {
         const status = await checkImage(i); //checks if there is an image corresponding to index
         if (status) {
-            if (getsBasicData) {
-                const basicData = await getBasicData(i);
-                if (basicData) {
-                    allBasicData.push({ percentage: basicData.players == 0 ? 0 : basicData.players / basicData.finishedPlayers * 100, src: `${image_url}${i}.png`, redirect: `/images/${i}`, number: basicData.players });
-                } else {
-                    getsBasicData = false;
-                    allBasicData.push({ percentage: 0, src: `${image_url}${i}.png`, redirect: `/images/${i}`, number: 0 });
-                }
+            const basicData = await getBasicData(i);
+
+            if (basicData) {
+                allBasicData.push({ percentage: basicData.players == 0 ? 0 : basicData.players / basicData.finishedPlayers * 100, src: `${image_url}${i}.png`, redirect: `/images/${i}`, number: basicData.players });
             } else {
                 allBasicData.push({ percentage: 0, src: `${image_url}${i}.png`, redirect: `/images/${i}`, number: 0 });
             }

@@ -3,17 +3,25 @@
 import { useEffect, useState } from "react";
 import ImageModel, { ImageModelProps } from "../../components/imageModel";
 import { getAllBasicData } from "../../components/utils";
+import { useRouter } from "next/router";
 
 let imageGroupIndex: number = 0;
+let ran = 0;
 const ImagesHome = () => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [imgCount, setImgCount] = useState<number>(0);
     const [isError, setIsError] = useState<boolean>(false);
     const [imageModelProps, setImageModelProps] = useState<ImageModelProps[]>([]);
+    const router = useRouter();
     useEffect(() => {
-
+        if (ran == 1) return;
+        const { low } = router.query;
+        imageGroupIndex = Number(low);
         getAndSetData().then(() => setIsLoading(false));
+        ran++;
     }, []);
     const redirect = (num: number) => {
+        setImgCount(0);
         imageGroupIndex += num;
         if (imageGroupIndex < 0) {
             imageGroupIndex = 0;
@@ -22,7 +30,23 @@ const ImagesHome = () => {
         getAndSetData().then(() => setIsLoading(false));
     };
     const getAndSetData = async () => {
-        const data = await getAllBasicData(imageGroupIndex, imageGroupIndex + 50);
+        const data: {
+            percentage: number;
+            src: string;
+            redirect: string;
+            number: number;
+        }[] = [];
+        const getAllBasicDataGenerator = getAllBasicData(imageGroupIndex, imageGroupIndex + 50);
+        for (let i = 0; i < 50; i++) {
+            const tempData = (await getAllBasicDataGenerator.next()).value;
+            if (tempData) {
+                setImgCount(tempData.count!);
+                delete tempData.count;
+                data.push(tempData);
+            } else {
+                break;
+            }
+        }
         if (data.length == 0) {
             setIsError(true);
         } else {
@@ -30,13 +54,13 @@ const ImagesHome = () => {
         }
         console.log(data);
         setImageModelProps(data);
-        console.log(data);
     };
 
     if (isLoading) {
         return (
             <div className="flex flex-col justify-center items-center w-full h-[100vh]">
                 <p className="text-2xl">Loading...</p>
+                <p>{`Images Loaded: ${imgCount}/50`}</p>
             </div>
         );
     } else if (isError) {
