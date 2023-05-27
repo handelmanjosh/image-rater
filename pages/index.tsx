@@ -31,7 +31,7 @@ export default function Home() {
   } else {
     return (
       <div className="flex flex-col justify-center items-center w-full gap-4">
-        <a href="/images" className="text-blue-600 hover:underline active:text-purple-600">Rate some images</a>
+        <a href={`/images/${0}`} className="text-blue-600 hover:underline active:text-purple-600">Rate some images</a>
         <div className="flex flex-row justify-center items-center gap-2">
           <button className="px-2 py-4 rounded-lg bg-blue-600 hover:brightness-95 active:brightness-75" onClick={goToRecentImage}>Go to recent Image</button>
           <button className="px-2 py-4 rounded-lg bg-blue-600 hover:brightness-95 active:brightness-75" onClick={goToRecentPage}>Go to recent Image page</button>
